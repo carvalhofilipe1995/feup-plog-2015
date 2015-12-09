@@ -49,3 +49,60 @@ showBoard([StartBoard|EndBoard], Dimension, Increment, DimensionDivision) :-
 
 printBoard(Dimension):- board(X), showColls(Dimension,1), showBoard(X,Dimension,1,Dimension).
 
+
+
+% Getting Cell
+
+getCell([ StartLine | _ ], 1, Collumn, Cell, Dimension):-
+        getCellCol(StartLine, Collumn, Cell, Dimension).
+
+getCell([ _ | RestBoard ], Row, Collumn, Cell, Dimension):-
+        Row > 0, Row =< Dimension,
+        Collumn > 0, Collumn =< Dimension,
+        NewRow is Row - 1,
+        getCell(RestBoard, NewRow, Collumn, Cell, Dimension).
+
+getCellCol([TheCell | _ ], 1, TheCell, _).
+
+getCellCol([ _ | RestLine ], Coll, Cell, Dimension):-
+                Coll > 0, Coll =< Dimension,
+                NewColl is Coll - 1,
+                getCellCol(RestLine, NewColl, Cell, Dimension).
+
+
+% Empty Cell
+
+emptyCell([ StartLine |  RestBoard], 1, Collumn, Dimension, [ NewBoardLine | RestBoard]):-
+        emptyCellColl(StartLine, Collumn, Dimension, NewBoardLine).
+                                                            
+emptyCell([ StartBoard |  RestBoard], Row, Collumn, Dimension, [ StartBoard| RestNewBoard]):-
+        Row > 0, Row =< Dimension,
+        Collumn > 0, Collumn =< Dimension,
+        NewRow is Row - 1,
+        emptyCell(RestBoard, NewRow, Collumn, Dimension, RestNewBoard).
+                
+emptyCellColl([ _ | RestLine ], 1, _, [0 | RestLine]).        
+emptyCellColl([StartLine | RestLine], Collumn, Dimension, [ StartLine | RestNewBoard]):-
+               Collumn > 0, Collumn =< Dimension,
+               NewColl is Collumn - 1,
+               emptyCellColl(RestLine, NewColl, Dimension, RestNewBoard).     
+        
+        
+        
+        
+        
+        
+        
+                               
+
+
+
+
+
+
+
+
+
+
+
+
