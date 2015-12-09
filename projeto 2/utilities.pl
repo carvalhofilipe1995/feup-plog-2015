@@ -87,8 +87,22 @@ emptyCellColl([StartLine | RestLine], Collumn, Dimension, [ StartLine | RestNewB
                NewColl is Collumn - 1,
                emptyCellColl(RestLine, NewColl, Dimension, RestNewBoard).     
         
-        
-        
+
+% Set Cell    
+setCell([ StartLine |  RestBoard], 1, Collumn, Dimension, [ NewBoardLine | RestBoard], Change):-
+        setCellColl(StartLine, Collumn, Dimension, NewBoardLine, Change).
+                                                            
+setCell([ StartBoard |  RestBoard], Row, Collumn, Dimension, [ StartBoard| RestNewBoard], Change):-
+        Row > 0, Row =< Dimension,
+        Collumn > 0, Collumn =< Dimension,
+        NewRow is Row - 1,
+        setCell(RestBoard, NewRow, Collumn, Dimension, RestNewBoard, Change).
+                
+setCellColl([ _ | RestLine ], 1, _, [Change | RestLine], Change).        
+setCellColl([StartLine | RestLine], Collumn, Dimension, [ StartLine | RestNewBoard], Change):-
+               Collumn > 0, Collumn =< Dimension,
+               NewColl is Collumn - 1,
+               setCellColl(RestLine, NewColl, Dimension, RestNewBoard, Change). 
         
         
         
