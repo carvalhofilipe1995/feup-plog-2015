@@ -30,7 +30,7 @@ startGame(3):- write('Exiting Game!'). % Exiting game
 % Generator
 
 /*
- * Function that creates a empty board with the correct dimensions 
+ * Create an empty board
  */
 generateBoard(_,0,[]).
 generateBoard(Dimension, Counter, Board) :-
