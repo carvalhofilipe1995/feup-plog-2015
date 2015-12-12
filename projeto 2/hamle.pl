@@ -26,6 +26,9 @@ startGame(2):- clearScreen(100), rules, % Showing rules
         
 startGame(3):- write('Exiting Game!'). % Exiting game
 
+%Test purposes%
+board([[0,2,3,0,5,0,0],[1,0,3,0,5,0,0],[1,2,3,4,5,0,0],[0,2,0,4,0,0,0],[1,0,0,0,5,4,4],[1,0,0,0,5,4,4],[1,0,0,0,5,4,4]]).
+
 
 % Generator
 
@@ -40,4 +43,33 @@ generateBoard(Dimension, Counter, Board) :-
         append([Row], T1, Board).
 
 
+getBlackPieces([Hrow | Trows], List) :-
+        length(Hrow, Dimension),
+        getBlackPieces([Hrow | Trows], Dimension, 1, List).
 
+getBlackPieces([], _, _, []).
+
+getBlackPieces([Hrow | Trows], Dimension, Row, List) :-
+        getBlackPiecesRow(Hrow, Dimension, Row, RowList),
+        NewRow is Row + 1,
+        getBlackPieces(Trows, Dimension, NewRow, BoardList),
+        append(RowList, BoardList, List).
+
+getBlackPiecesRow(RowList, Dimension, Row, List):-
+        getBlackPiecesRow(RowList, Dimension, Row, 1, List).
+
+getBlackPiecesRow(RowList, Dimension, Row, Dimension, List):-
+        nth1(Dimension, RowList, Number),
+        (Number > 0 -> append([], [[Row, Dimension, Number]], TempList)
+        ;
+        append([],[],TempList)),
+        append([], TempList, List).
+
+getBlackPiecesRow(RowList, Dimension, Row, Col, List):-
+        nth1(Col, RowList, Number),
+        (Number > 0 -> append([], [[Row, Col, Number]], TempList)
+        ;
+        append([],[],TempList)),
+        NewCol is Col + 1,
+        getBlackPiecesRow(RowList, Dimension, Row, NewCol, RestList),
+        append(TempList, RestList, List).
