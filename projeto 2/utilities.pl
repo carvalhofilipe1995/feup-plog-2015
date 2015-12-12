@@ -2,8 +2,6 @@
  *      Utilities File
  */ 
 
-board([[0,2,3,0,5,0,0],[1,0,3,0,5,0,0],[1,2,3,4,5,0,0],[0,2,0,4,0,0,0],[1,0,0,0,5,4,4],[1,0,0,0,5,4,4],[1,0,0,0,5,4,4]]).
-
 
 %-- Printing board game --%
 
@@ -104,9 +102,34 @@ setCellColl([StartLine | RestLine], Collumn, Dimension, [ StartLine | RestNewBoa
                NewColl is Collumn - 1,
                setCellColl(RestLine, NewColl, Dimension, RestNewBoard, Change). 
         
-        
-        
-        
+  
+
+% Clear Screen
+
+clearScreen(0).
+clearScreen(N):- nl, N1 is N-1, clearScreen(N1).
+
+
+% Interface Outputs
+
+menu:- write('        PLOG 2015/2016        \n'),
+       write('------------------------------\n'),
+       write('######### Hamle Game #########\n'),
+       write('------------------------------\n'),
+       write('#   1. Play                  #\n'),
+       write('#   2. Rules                 #\n'),     
+       write('#   3. Exit                  #\n'),
+       write('##############################\n'),
+       write('------------------------------\n').    
+
+rules:- write('        PLOG 2015/2016        \n'),
+        write('------------------------------\n'),
+        write('######### Hamle Game #########\n'),
+        write('------------------------------\n'),
+        write('#          Rules             #\n'),
+        write('------------------------------\n'),
+        write('------------------------------\n'),
+        write('Press 0 to back to menu').
                                
 
 
