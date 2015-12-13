@@ -42,6 +42,29 @@ generateBoard(Dimension, Counter, Board) :-
         generateBoard(Dimension, NewCounter, T1),
         append([Row], T1, Board).
 
+% Solver
+
+solve([HRow | TRows], Sol):-
+        getBlackPieces(Board, BlackList),
+        length(BlackList, BlackNumber),
+        length(HRow, Dimension),
+        length(Cols, BlackNumber),
+        length(Rows, BlackNumber),
+        domain(Cols, 1, Dimension),
+        domain(Rows, 1, Dimension),
+        tryToSolve(Cols, Rows, BlackList),
+        append(Sol, SolFlat)
+		labeling([], SolFlat).
+
+
+
+
+tryToSolve([Col1 | Cols], [Row1 | Rows], BlackList):-
+        tryToSolvePiece(Col1, Row1, BlackList),
+        tryToSolve(Cols, Rows, BlackList).
+
+
+
 
 getBlackPieces([Hrow | Trows], List) :-
         length(Hrow, Dimension),
