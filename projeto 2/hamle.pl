@@ -74,6 +74,15 @@ checkDown(Board, Row, Col, Dimension):-((Row < Dimension, NewRow is Row + 1,
                                        getCell(Board, NewRow, Col, Cell, Dimension), 
                                        Cell > 0)) -> false; true.
 
+/* Check the distance to the edges */
+
+calcEdgeDistances(Dimension, Row, Col, Result):- DistanceRight is Dimension - Col, 
+                                                 DistanceLeft is Col - 1,
+                                                 DistanceUp is Row - 1,
+                                                 DistanceDown is Dimension - Row,
+                                                 X = [[DistanceRight],[DistanceLeft],[DistanceUp],[DistanceDown]],
+                                                 append(X,Result).
+
 
 
 
