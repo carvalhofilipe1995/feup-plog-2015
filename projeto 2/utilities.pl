@@ -110,6 +110,7 @@ clearScreen(0).
 clearScreen(N):- nl, N1 is N-1, clearScreen(N1).
 
 
+
 % Interface Outputs
 
 menu:- write('        PLOG 2015/2016        \n'),
