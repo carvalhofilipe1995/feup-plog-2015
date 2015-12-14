@@ -31,13 +31,20 @@ startGame(3):- write('Exiting Game!'). % Exiting game
 
 %Test purposes%
 
-board( [[0,1,2,3,4,0,0],
-        [1,0,0,0,0,0,0],
-        [0,1,3,4,5,0,0],
-        [1,0,0,4,0,0,0],
-        [1,4,0,0,5,4,4],
-        [1,0,0,0,5,4,4],
-        [1,0,0,0,5,4,4]]).
+board0( [[0,0,0,0,3,0,3],
+        [4,0,0,2,0,0,0],
+        [0,0,4,3,0,0,0],
+        [4,0,0,0,3,0,2],
+        [0,2,0,2,0,0,0],
+        [0,0,0,0,2,0,0],
+        [0,0,0,4,0,0,2]]).
+
+board1([[0,3,0,0,0,2],
+        [0,0,3,0,4,0],
+        [0,1,0,0,0,0],
+        [5,0,0,2,0,2],
+        [0,0,0,0,0,0],
+        [0,4,0,2,0,0]]).
 
 board_xs( [[0, 1, 0],
 		   [1, 0, 1],
@@ -51,13 +58,31 @@ list_poss( [[0, 1], [0], [0, 1], [0], [0, 1], [0], [0, 1], [0], [0, 2]]).
 
 solve_board(Board, Sol):-
         length(Board, Dimension),
-        create_board(Sol, Dimension).
+        get_cardinality(Board, Dimension, Cardin),
+        create_board(Sol, Dimension),
         %get_black_pieces(Board, BlackList),
-        %get_possib(Board, Dimension, PossibList),
-        %adjacents(Sol),
-        %restrict(Sol, PossibList),
-        %append(Sol, SolFlat)
-		%labeling([], SolFlat).
+        get_possib(Board, Dimension, PossibList),
+        adjacents(Sol),
+        restrict(Sol, PossibList),
+        append(Sol, SolFlat),
+        global_cardinality(SolFlat, Cardin),
+        write('labeling'), nl,
+		labeling([], SolFlat).
+
+
+
+get_cardinality(Board, Dimension, Cardin):- make_list(Dimension, List, 0, _),
+											append(Board, BoardFlat),
+											global_cardinality(BoardFlat, List),
+											append([], List, Cardin).
+										
+
+make_list(Dim, L, Dim, A):- append([], [Dim-A], L).
+
+
+make_list(Dim, L, Elem, A):- NewElem is Elem + 1,
+							make_list(Dim, RestList, NewElem, _),
+							append([Elem-A], RestList, L).
 
 
 create_board(Board, N):- length(Board, N), maplist(set_length(N), Board).
@@ -70,19 +95,19 @@ get_possib(Board, Dim, List):- get_possib_cell(Board, Dim, 1, 1, List).
 
 
 get_possib_cell(Board, Dim, Dim, Dim, List):- make_possib_list(Board, Dim, Dim, Dim, TempList),
-											append([], [[TempList]], List).
+											append([], [TempList], List).
 
 
 get_possib_cell(Board, Dim, Row, Dim, List):- make_possib_list(Board, Dim, Row, Dim, TempList),
 											NewRow is Row + 1,
 											get_possib_cell(Board, Dim, NewRow, 1, RestList),
-											append([[TempList]], RestList, List).
+											append([TempList], RestList, List).
 
 
 get_possib_cell(Board, Dim, Row, Col, List):- make_possib_list(Board, Dim, Row, Col, TempList),
 											NewCol is Col + 1,
 											get_possib_cell(Board, Dim, Row, NewCol, RestList),
-											append([[TempList]], RestList, List).
+											append([TempList], RestList, List).
 
 
 
@@ -140,51 +165,76 @@ checkDownPossib(_, _, _, _, _, _).
 
 /* Restrict each cell so there can't be adjacent black pieces */
 
-% Last Cell
-adjacents([[_]]).
-
-
+% First Collumn
 adjacents([[H0Row0, H1Row0 | TRow0], [H0Row1 | TRow1] | TRows]):-
+	write('First Collumn'), nl, 
 	((H0Row0 #= 0 #/\ H1Row0 #= 0) #\/ (H0Row0 #= 0 #/\ H1Row0 #\= 0) #\/ (H1Row0 #= 0 #/\ H0Row0 #\= 0)) #/\
 	((H0Row0 #= 0 #/\ H0Row1 #= 0) #\/ (H0Row0 #= 0 #/\ H0Row1 #\= 0) #\/ (H0Row1 #= 0 #/\ H0Row0 #\= 0)),
-	adjacents([[H1Row0 | TRow0], [TRow1] | TRows]).
+	adjacents([[H1Row0 | TRow0], TRow1 | TRows], [H0Row1 | TRow1]).
 
-
-% Last Collumn
-adjacents([[H0Row0], H0Row1 | TRows]) :-
-	(H0Row0 #= 0 #/\ H0Row1 #= 0) #\/ (H0Row0 #= 0 #/\ H0Row1 #\= 0) #\/ (H0Row1 #= 0 #/\ H0Row0 #\= 0),
-	adjacents([H0Row1 | TRows]).
-
+adjacents([[H0Row, H1Row | []] | []]) :-
+	write('before last cell'), nl,
+	(H0Row #= 0 #/\ H1Row #= 0) #\/ (H0Row #= 0 #/\ H1Row #\= 0) #\/ (H1Row #= 0 #/\ H0Row #\= 0).
 
 % Last Row
-adjacents([[H0Row, H1Row | TRow]]) :-
-	(H0Row #= 0 #/\ H1Row #= 0) #\/ (H0Row0 #= 0 #/\ H1Row0 #\= 0) #\/ (H1Row0 #= 0 #/\ H0Row0 #\= 0),
-	adjacents([[H1Row | TRow]]).
+adjacents([[H0Row, H1Row | TRow] | []]) :-
+	write('last row'), nl,
+	(H0Row #= 0 #/\ H1Row #= 0) #\/ (H0Row #= 0 #/\ H1Row #\= 0) #\/ (H1Row #= 0 #/\ H0Row #\= 0),
+	adjacents([[H1Row | TRow] | []]).
 
+
+adjacents([[H0Row0, H1Row0 | TRow0], [H0Row1 | TRow1] | TRows], SavedList):-
+	((H0Row0 #= 0 #/\ H1Row0 #= 0) #\/ (H0Row0 #= 0 #/\ H1Row0 #\= 0) #\/ (H1Row0 #= 0 #/\ H0Row0 #\= 0)) #/\
+	((H0Row0 #= 0 #/\ H0Row1 #= 0) #\/ (H0Row0 #= 0 #/\ H0Row1 #\= 0) #\/ (H0Row1 #= 0 #/\ H0Row0 #\= 0)),
+	adjacents([[H1Row0 | TRow0], TRow1 | TRows], SavedList).
+
+
+% When going to Last Row
+adjacents([[H0Row0 | []], [H0Row1 | []] | []], SavedList) :-
+	write('once'), nl, 
+	(H0Row0 #= 0 #/\ H0Row1 #= 0) #\/ (H0Row0 #= 0 #/\ H0Row1 #\= 0) #\/ (H0Row1 #= 0 #/\ H0Row0 #\= 0),
+	write(SavedList), nl,
+	adjacents([SavedList]).
+
+% Last Collumn
+adjacents([[H0Row0 | []], [H0Row1 | []] | TRows], SavedList) :-
+	write('Last Collumn'), nl, 
+	(H0Row0 #= 0 #/\ H0Row1 #= 0) #\/ (H0Row0 #= 0 #/\ H0Row1 #\= 0) #\/ (H0Row1 #= 0 #/\ H0Row0 #\= 0),
+	append([SavedList], TRows, Board),
+	adjacents(Board).
 
 /* Restrict each cell with the respective possibilities */
 
 % Last Cell
-restrict([[HRLast] | []], [[HCLast] | []]):- restrict_cell(HRLast, HCLast).
+restrict([[HRLast | []] | []], [HCLast | []]):- restrict_cell(HRLast, HCLast).
 
 
-restrict([[H0Row0 | TRow0], [Row1 | TRows]], [HCell | TCells]):- restrict_cell(H0Row0, HCell),
-																restrict([TRow0, [Row1 | TRows]], TCells).
+restrict([[H0Row0 | TRow0] | TRows], [HCell | TCells]):- restrict_cell(H0Row0, HCell),
+														restrict([TRow0 | TRows], TCells).
 
 
-% Last Collum
-restrict([[H0Row0] | TRows], [HCell | TCells]):- restrict_cell(H0Row0, HCell),
-												restrict(TRows, TCells).
+% Last Collumn
+restrict([[H0Row0 | []] | TRows], [HCell | TCells]):- restrict_cell(H0Row0, HCell),
+													restrict(TRows, TCells).
 
 
 % Last Row
-restrict([H0Row | TRow], [HCell | TCells]):- restrict_cell(H0Row, HCell),
-											restrict(TRow, TCells).
+restrict([[H0Row | TRow] | []], [HCell | TCells]):- restrict_cell(H0Row, HCell),
+										restrict(TRow, TCells).
 
 
 
 restrict_cell(HRow, HCell):- list_to_fdset(HCell, Set),
 							HRow in_set Set.
+
+
+/* pred(P, [H | T], N) :-
+     (P #= H) #<=> S,
+     pred(P, T, V),
+	 N #= S + V.
+
+chamada: pred(Celula, ListaDeValoresPossiveis, N), N #= 1.
+*/
 
 /* Check Range Black pieces */
 
