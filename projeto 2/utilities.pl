@@ -63,7 +63,7 @@ getCell([ _ | RestBoard ], Row, Collumn, Cell, Dimension):-
 getCellCol([TheCell | _ ], 1, TheCell, _).
 
 getCellCol([ _ | RestLine ], Coll, Cell, Dimension):-
-                Coll > 0, Coll =< Dimension,
+                Coll > 1, Coll =< Dimension,
                 NewColl is Coll - 1,
                 getCellCol(RestLine, NewColl, Cell, Dimension).
 
