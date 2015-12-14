@@ -68,6 +68,7 @@ create_board(Board, N):- length(Board, N),
 set_length(L, Ls) :- length(Ls, L).
 
 
+
 get_possib(Board, Dim, List):- get_possib_cell(Board, Dim, 1, 1, List).
 
 
@@ -87,7 +88,51 @@ get_possib_cell(Board, Dim, Row, Col, List):- make_possib_list(Board, Dim, Row, 
 											append([[TempList]], RestList, List).
 
 
-make_possib_list(Board, Dim, Row, Col, List):- getCell(Board, Row, Col, Cell, Dim).
+
+make_possib_list(Board, Dim, Row, Col, List):- checkRightPossib(Board, Dim, Row, Col, ResultRight, 1),
+                                               checkLeftPossib(Board, Dim, Row, Col, ResultLeft, 1),
+                                               checkUpPossib(Board, Dim, Row, Col, ResultUp, 1),
+                                               checkDownPossib(Board, Dim, Row, Col, ResultDown, 1),
+                                               Result = [[0], [ResultRight],[ResultLeft],[ResultUp],[ResultDown]],
+                                               append(Result, List).
+
+
+checkRightPossib(Board, Dim, Row, Col, ResultRight, Counter):- NewCol is Col + Counter,
+                                                               (NewCol < Dim -> 
+                                                               NewCounter is Counter + 1,
+                                                               getCell(Board, Row, NewCol, Value, Dim),
+                                                               Diff is NewCol - Col,
+                                                               (Diff = Value -> append([[Value]], ResultRight),
+                                                                                checkRightPossib(Board, Dim, Row, Col, ResultRight, NewCounter) ; 
+                                                               checkRightPossib(Board, Dim, Row, Col, ResultRight, NewCounter))).
+
+checkLeftPossib(Board, Dim, Row, Col, ResultLeft, Counter):- NewCol is Col - Counter,
+                                                             (NewCol > 1 ->
+                                                             NewCounter is Counter + 1,
+                                                             getCell(Board, Row, NewCol, Value, Dim),
+                                                             Diff is Col - NewCol,
+                                                             (Diff = Value -> append([[Value]], ResultRight),
+                                                                              checkLeftPossib(Board, Dim, Row, Col, ResultRight, NewCounter) ; 
+                                                             checkLeftPossib(Board, Dim, Row, Col, ResultLeft, NewCounter))).   
+
+checkUpPossib(Board, Dim, Row, Col, ResultLeft, Counter):-  NewRow is Row - Counter,
+                                                            (NewRow > 1 ->
+                                                            NewCounter is Counter + 1,
+                                                            getCell(Board, NewRow, Col, Value, Dim),
+                                                            Diff is Row - NewRow,
+                                                            (Diff = Value -> append([[Value]], ResultRight),
+                                                                             checkUpPossib(Board, Dim, Row, Col, ResultRight, NewCounter) ; 
+                                                            checkUpPossib(Board, Dim, Row, Col, ResultLeft, NewCounter))). 
+
+
+checkDownPossib(Board, Dim, Row, Col, ResultLeft, Counter):-  NewRow is Row + Counter,
+                                                              (NewRow < Dim ->
+                                                              NewCounter is Counter + 1,
+                                                              getCell(Board, NewRow, Col, Value, Dim),
+                                                              Diff is Row - NewRow,
+                                                              (Diff = Value -> append([[Value]], ResultRight),
+                                                                               checkDownPossib(Board, Dim, Row, Col, ResultRight, NewCounter) ; 
+                                                              checkDownPossib(Board, Dim, Row, Col, ResultLeft, NewCounter))).
 
 
 % Last Cell
