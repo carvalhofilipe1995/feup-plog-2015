@@ -228,14 +228,6 @@ restrict_cell(HRow, HCell):- list_to_fdset(HCell, Set),
 							HRow in_set Set.
 
 
-/* pred(P, [H | T], N) :-
-     (P #= H) #<=> S,
-     pred(P, T, V),
-	 N #= S + V.
-
-chamada: pred(Celula, ListaDeValoresPossiveis, N), N #= 1.
-*/
-
 /* Check Range Black pieces */
 
 checkRange(Board, Row, Col, Dimension):- checkRight(Board, Row, Col, Dimension),
