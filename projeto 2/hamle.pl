@@ -62,43 +62,58 @@ solve_board(Board, Sol):-
 		%labeling([], SolFlat).
 
 
-create_board(Board, N):-
-        				length(Board, N),
+create_board(Board, N):- length(Board, N),
         				maplist(set_length(N), Board).
 
 set_length(L, Ls) :- length(Ls, L).
 
 
-get_possib(Board, Dim, List):-
-							get_possib_row(Board, Dim, 1, List).
+get_possib(Board, Dim, List):- get_possib_cell(Board, Dim, 1, 1, List).
 
 
-get_possib_row(Board, Dim, Row, List):-
-										get_possib_cell(Board, Dim, Row, 1, List).
-
-
-get_possib_cell(Board, Dim, Dim, Dim, List):-
-											make_possib_list(Board, Dim, Dim, Dim, TempList),
+get_possib_cell(Board, Dim, Dim, Dim, List):- make_possib_list(Board, Dim, Dim, Dim, TempList),
 											append([], [[TempList]], List).
 
 
-get_possib_cell(Board, Dim, Row, Dim, List):-
-											make_possib_list(Board, Dim, Row, Dim, TempList),
+get_possib_cell(Board, Dim, Row, Dim, List):- make_possib_list(Board, Dim, Row, Dim, TempList),
 											NewRow is Row + 1,
 											get_possib_cell(Board, Dim, NewRow, 1, RestList),
 											append([[TempList]], RestList, List).
 
 
-get_possib_cell(Board, Dim, Row, Col, List):-
-											make_possib_list(Board, Dim, Row, Col, TempList),
+get_possib_cell(Board, Dim, Row, Col, List):- make_possib_list(Board, Dim, Row, Col, TempList),
 											NewCol is Col + 1,
 											get_possib_cell(Board, Dim, Row, NewCol, RestList),
 											append([[TempList]], RestList, List).
 
 
-make_possib_list(Board, Dim, Row, Col, List):-
-											getCell(Board, Row, Col, Cell, Dim).
+make_possib_list(Board, Dim, Row, Col, List):- getCell(Board, Row, Col, Cell, Dim).
 
+
+% Last Cell
+adjacents([[_]]).
+
+
+adjacents([[H0Row0, H1Row0 | TRow0], [H0Row1 | TRow1] | TRows]):-
+	(H0Row0 + H1Row0 #= 0 #\/ (H0Row0 #= 0 #/\ H1Row0 #\= 0) #\/ (H1Row0 #= 0 #/\ H0Row0 #\= 0)) #/\
+	(H0Row0 + H0Row1 #= 0 #\/ (H0Row0 #= 0 #/\ H0Row1 #\= 0) #\/ (H0Row1 #= 0 #/\ H0Row0 #\= 0)),
+	adjacents([[H1Row0 | TRow0], [TRow1 | TRows]]).
+
+
+% Last Collumn
+adjacents([[H0Row0], H0Row1 | TRows]) :-
+	H0Row0 + H0Row1 #= 0 #\/ (H0Row0 #= 0 #/\ H0Row1 #\= 0) #\/ (H0Row1 #= 0 #/\ H0Row0 #\= 0),
+	adjacents([H0Row1 | TRows]).
+
+
+% Last Row
+adjacents([[H0Row, H1Row | TRow]]) :-
+	H0Row0 + H1Row0 #= 0 #\/ (H0Row0 #= 0 #/\ H1Row0 #\= 0) #\/ (H1Row0 #= 0 #/\ H0Row0 #\= 0),
+	adjacents([[H1Row | Trow]]).
+
+
+
+% restrict([[H0Row0 | TRow0] , [Row1 | TRows]], [HCell | TCells]) :- 
 
 /* Check Range Black pieces */
 
@@ -108,19 +123,19 @@ checkRange(Board, Row, Col, Dimension):- checkRight(Board, Row, Col, Dimension),
                                          checkDown(Board, Row, Col, Dimension).
 
 
-checkRight(Board, Row, Col, Dimension):-((Col < Dimension, NewCol is Col + 1,
+checkRight(Board, Row, Col, Dimension):- ((Col < Dimension, NewCol is Col + 1,
                                           getCell(Board, Row, NewCol, Cell, Dimension), 
                                           Cell > 0)) -> false; true.
 
-checkLeft(Board, Row, Col, Dimension):-((Col > 1, NewCol is Col - 1,
+checkLeft(Board, Row, Col, Dimension):- ((Col > 1, NewCol is Col - 1,
                                          getCell(Board, Row, NewCol, Cell, Dimension), 
                                          Cell > 0)) -> false; true.
 
-checkUp(Board, Row, Col, Dimension):-((Row > 1, NewRow is Row - 1,
+checkUp(Board, Row, Col, Dimension):- ((Row > 1, NewRow is Row - 1,
                                        getCell(Board, NewRow, Col, Cell, Dimension), 
                                        Cell > 0)) -> false; true.
 
-checkDown(Board, Row, Col, Dimension):-((Row < Dimension, NewRow is Row + 1,
+checkDown(Board, Row, Col, Dimension):- ((Row < Dimension, NewRow is Row + 1,
                                        getCell(Board, NewRow, Col, Cell, Dimension), 
                                        Cell > 0)) -> false; true.
 
