@@ -38,6 +38,12 @@ board( [[0,2,3,0,5,0,0],
         [1,0,0,0,5,4,4],
         [1,0,0,0,5,4,4]]).
 
+board_xs( [[0, 1, 0],
+		   [1, 0, 1],
+		   [2, 0, 0]]).
+
+list_poss( [[0, 1], [0], [0, 1], [0], [0, 1], [0], [0, 1], [0], [0, 2]]).
+
 
 % Generator
 
@@ -55,7 +61,7 @@ solve_board(Board, Sol):-
         length(Board, Dimension),
         create_board(Sol, Dimension).
         %get_black_pieces(Board, BlackList),
-        %get_possibilities(Board, Dimension, PossibList),
+        %get_possib(Board, Dimension, PossibList),
         %adjacents(Sol),
         %restrict(Sol, PossibList),
         %append(Sol, SolFlat)
@@ -135,30 +141,53 @@ checkDownPossib(Board, Dim, Row, Col, ResultLeft, Counter):-  NewRow is Row + Co
                                                               checkDownPossib(Board, Dim, Row, Col, ResultLeft, NewCounter))).
 
 
+/* Restrict each cell so there can't be adjacent black pieces */
+
 % Last Cell
 adjacents([[_]]).
 
 
 adjacents([[H0Row0, H1Row0 | TRow0], [H0Row1 | TRow1] | TRows]):-
-	(H0Row0 + H1Row0 #= 0 #\/ (H0Row0 #= 0 #/\ H1Row0 #\= 0) #\/ (H1Row0 #= 0 #/\ H0Row0 #\= 0)) #/\
-	(H0Row0 + H0Row1 #= 0 #\/ (H0Row0 #= 0 #/\ H0Row1 #\= 0) #\/ (H0Row1 #= 0 #/\ H0Row0 #\= 0)),
-	adjacents([[H1Row0 | TRow0], [TRow1 | TRows]]).
+	((H0Row0 #= 0 #/\ H1Row0 #= 0) #\/ (H0Row0 #= 0 #/\ H1Row0 #\= 0) #\/ (H1Row0 #= 0 #/\ H0Row0 #\= 0)) #/\
+	((H0Row0 #= 0 #/\ H0Row1 #= 0) #\/ (H0Row0 #= 0 #/\ H0Row1 #\= 0) #\/ (H0Row1 #= 0 #/\ H0Row0 #\= 0)),
+	adjacents([[H1Row0 | TRow0], [TRow1] | TRows]).
 
 
 % Last Collumn
 adjacents([[H0Row0], H0Row1 | TRows]) :-
-	H0Row0 + H0Row1 #= 0 #\/ (H0Row0 #= 0 #/\ H0Row1 #\= 0) #\/ (H0Row1 #= 0 #/\ H0Row0 #\= 0),
+	(H0Row0 #= 0 #/\ H0Row1 #= 0) #\/ (H0Row0 #= 0 #/\ H0Row1 #\= 0) #\/ (H0Row1 #= 0 #/\ H0Row0 #\= 0),
 	adjacents([H0Row1 | TRows]).
 
 
 % Last Row
 adjacents([[H0Row, H1Row | TRow]]) :-
-	H0Row0 + H1Row0 #= 0 #\/ (H0Row0 #= 0 #/\ H1Row0 #\= 0) #\/ (H1Row0 #= 0 #/\ H0Row0 #\= 0),
-	adjacents([[H1Row | Trow]]).
+	(H0Row #= 0 #/\ H1Row #= 0) #\/ (H0Row0 #= 0 #/\ H1Row0 #\= 0) #\/ (H1Row0 #= 0 #/\ H0Row0 #\= 0),
+	adjacents([[H1Row | TRow]]).
+
+
+/* Restrict each cell with the respective possibilities */
+
+% Last Cell
+restrict([[HRLast] | []], [[HCLast] | []]):- restrict_cell(HRLast, HCLast).
+
+
+restrict([[H0Row0 | TRow0], [Row1 | TRows]], [HCell | TCells]):- restrict_cell(H0Row0, HCell),
+																restrict([TRow0, [Row1 | TRows]], TCells).
+
+
+% Last Collum
+restrict([[H0Row0] | TRows], [HCell | TCells]):- restrict_cell(H0Row0, HCell),
+												restrict(TRows, TCells).
+
+
+% Last Row
+restrict([H0Row | TRow], [HCell | TCells]):- restrict_cell(H0Row, HCell),
+											restrict(TRow, TCells).
 
 
 
-% restrict([[H0Row0 | TRow0] , [Row1 | TRows]], [HCell | TCells]) :- 
+restrict_cell(HRow, HCell):- list_to_fdset(HCell, Set),
+							HRow in_set Set.
 
 /* Check Range Black pieces */
 
@@ -194,9 +223,6 @@ calcEdgeDistances(Dimension, Row, Col, Result):- DistanceRight is Dimension - Co
                                                  append(X,Result).
 
 
-
-
-% Solver
 
 /* Get Black Pieces */
 get_black_pieces([Hrow | Trows], List) :-
