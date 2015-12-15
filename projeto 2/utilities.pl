@@ -35,17 +35,16 @@ showLine([LineStart| LineEnd]):-
         showLine(LineEnd).
 
 
-showBoard([], 0, _, _). 
-showBoard([StartBoard|EndBoard], Dimension, Increment, DimensionDivision) :-
-                showDivision(DimensionDivision),
+showBoard([], 0, _, DimDivision):- showDivision(DimDivision). 
+showBoard(Board, Dim, 0, DimDivision):- showColls(Dim,1),
+                                        showBoard(Board, Dim, 1, DimDivision).
+showBoard([StartBoard|EndBoard], Dim, Increment, DimDivision) :-
+                showDivision(DimDivision),
                 writeLineNumber(Increment),
                 showLine(StartBoard),
                 NewIncrement is Increment + 1,
-                NewDimension is Dimension - 1,
-                showBoard(EndBoard, NewDimension, NewIncrement, DimensionDivision).
-
-
-printBoard(Dimension):- board(X), showColls(Dimension,1), showBoard(X,Dimension,1,Dimension).
+                NewDim is Dim - 1,
+                showBoard(EndBoard, NewDim, NewIncrement, DimDivision).
 
 
 
@@ -100,37 +99,10 @@ setCellColl([ _ | RestLine ], 1, _, [Change | RestLine], Change).
 setCellColl([StartLine | RestLine], Collumn, Dimension, [ StartLine | RestNewBoard], Change):-
                Collumn > 0, Collumn =< Dimension,
                NewColl is Collumn - 1,
-               setCellColl(RestLine, NewColl, Dimension, RestNewBoard, Change). 
-        
-  
-
-% Clear Screen
-
-clearScreen(0).
-clearScreen(N):- nl, N1 is N-1, clearScreen(N1).
+               setCellColl(RestLine, NewColl, Dimension, RestNewBoard, Change).
 
 
 
-% Interface Outputs
-
-menu:- write('        PLOG 2015/2016        \n'),
-       write('------------------------------\n'),
-       write('######### Hamle Game #########\n'),
-       write('------------------------------\n'),
-       write('#   1. Play                  #\n'),
-       write('#   2. Rules                 #\n'),     
-       write('#   3. Exit                  #\n'),
-       write('##############################\n'),
-       write('------------------------------\n').    
-
-rules:- write('        PLOG 2015/2016        \n'),
-        write('------------------------------\n'),
-        write('######### Hamle Game #########\n'),
-        write('------------------------------\n'),
-        write('#          Rules             #\n'),
-        write('------------------------------\n'),
-        write('------------------------------\n'),
-        write('Press 0 to back to menu').
                                
 
 

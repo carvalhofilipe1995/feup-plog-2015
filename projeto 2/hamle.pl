@@ -1,37 +1,13 @@
-
 includeUtilities:- include('utilities.pl').
 :-use_module(library(lists)).
 :-use_module(library(clpfd)).
-:- use_module(library(random)).
+:-use_module(library(random)).
 
-
-% Running Game %
-
-playGame:- clearScreen(100),
-           menu,
-           write('>'),
-           read(Choice), nl, Choice > 0, Choice =< 3, startGame(Choice).
-
-
-% Functions that allow Start Or Exit the game %
-
-
-startGame(1):- clearScreen(100), % Starting Game
-               write('Choose dimension board '),
-               read(Dimension), 
-               Dimension > 0,
-               generateBoard(Dimension). 
-
-startGame(2):- clearScreen(100), rules, % Showing rules
-               read(Exit), Exit > -1, 
-               playGame. 
-        
-startGame(3):- write('Exiting Game!'). % Exiting game
 
 
 %Test purposes%
 
-board0( [[0,0,0,0,3,0,3],
+board7([[0,0,0,0,3,0,3],
         [4,0,0,2,0,0,0],
         [0,0,4,3,0,0,0],
         [4,0,0,0,3,0,2],
@@ -39,42 +15,99 @@ board0( [[0,0,0,0,3,0,3],
         [0,0,0,0,2,0,0],
         [0,0,0,4,0,0,2]]).
 
-board1([[0,3,0,0,0,2],
+board6([[0,3,0,0,0,2],
         [0,0,3,0,4,0],
         [0,1,0,0,0,0],
         [5,0,0,2,0,2],
         [0,0,0,0,0,0],
         [0,4,0,2,0,0]]).
 
-board_xs( [[0, 1, 0],
-		   [1, 0, 1],
-		   [2, 0, 0]]).
-
-list_poss( [[0, 1], [0], [0, 1], [0], [0, 1], [0], [0, 1], [0], [0, 2]]).
 
 
 
-% Solver
+generator(Size):-
+	write('Generating random Hamle puzzle of size '), write(Size), write('.'), nl, nl,
+	generate_random_board(Size, Initial),
+	showBoard(Initial, Size, 0, Size), nl,
+	write('This is your randomly generated initial puzzle.'), nl, nl,
+	write('Enter anything to solve the puzzle.'), nl,
+	read(_), nl,
+	solve_board(Initial).
 
-solve_board(Board, Sol):-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%% GENERATOR %%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+generate_random_board(Size, Initial):- create_board(Sol, Size),
+									adjacents(Sol),
+									randomize_cardinality(Size, L),
+									append(Sol, SolFlat),
+									global_cardinality(SolFlat, L),
+									labeling([], SolFlat),
+									get_possib(Sol, Size, PossibList),
+									create_board(Initial, Size),
+									restrict(Initial, PossibList),
+									append(Initial, InitFlat),
+									global_cardinality(InitFlat, L),
+									labeling([], InitFlat),
+									nl, fd_statistics, nl,
+									write('Generator finished! Here are some cool stats...'), nl, nl.
+
+randomize_cardinality(Size, List):- NumPieces is floor(Size*Size*0.28),
+									make_random_list(Size, List, 0, NumPieces).
+
+make_random_list(Dim, L, 0, Num):- Number is (Dim*Dim)-Num,
+								make_random_list(Dim, RestList, 1, Num),
+								append([0-Number], RestList, L).
+
+make_random_list(Dim, L, Elem, Num):- (Elem =:= Dim - 1 -> append([], [Elem-Num], L)
+							;
+							Aprox is ceiling(Num/(Dim-1)),
+							(Aprox > 0 -> Lower is Aprox - 1
+							;
+								Lower is 0),
+							(Aprox >= 0 -> Upper is Aprox + 1
+							;
+								Upper is 0),
+							random(Lower, Upper, Final),
+							NewNum is Num - Final,
+							NewNum >= 0,
+							NewElem is Elem + 1,
+							make_random_list(Dim, RestList, NewElem, NewNum),
+							append([Elem-Final], RestList, L)).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%% SOLVER %%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+solve_board(Board):-
         length(Board, Dimension),
         get_cardinality(Board, Dimension, Cardin),
         create_board(Sol, Dimension),
-        %get_black_pieces(Board, BlackList),
         get_possib(Board, Dimension, PossibList),
-        adjacents(Sol),
         restrict(Sol, PossibList),
+        adjacents(Sol),
         append(Sol, SolFlat),
         global_cardinality(SolFlat, Cardin),
-        write('labeling'), nl,
-		labeling([], SolFlat).
+		labeling([], SolFlat),
+		nl, fd_statistics, nl,
+		write('Solver finished! Here are some cool stats...'), nl, nl,
+		write('Enter anything to see the solution'), nl,
+		read(_), nl, nl,
+		showBoard(Sol, Dimension, 0, Dimension).
 
 
 
-get_cardinality(Board, Dimension, Cardin):- make_list(Dimension, List, 0, _),
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% Get list to be used in global_cardinality() to know how many pieces of each value are in the initial board. %%%
+%%%%---------------------- List = [0-A, 1-B, 2-C,...,N-_] in a (N+1)x(N+1) board. -------------------------------%%%
+%%%% Each variable will be assigned with the number of occurrences of each value in the initial board. %%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+get_cardinality(Board, Dimension, List):- make_list(Dimension, List, 0, _),
 											append(Board, BoardFlat),
-											global_cardinality(BoardFlat, List),
-											append([], List, Cardin).
+											global_cardinality(BoardFlat, List).
 										
 
 make_list(Dim, L, Dim, A):- append([], [Dim-A], L).
@@ -85,11 +118,18 @@ make_list(Dim, L, Elem, A):- NewElem is Elem + 1,
 							append([Elem-A], RestList, L).
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% Create Initial Solution NxN Board %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 create_board(Board, N):- length(Board, N), maplist(set_length(N), Board).
 
-set_length(L, Ls) :- length(Ls, L).
+set_length(L, Ls):- length(Ls, L).
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% Get possibilities list for each cell of the board %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 get_possib(Board, Dim, List):- get_possib_cell(Board, Dim, 1, 1, List).
 
@@ -110,6 +150,9 @@ get_possib_cell(Board, Dim, Row, Col, List):- make_possib_list(Board, Dim, Row, 
 											append([TempList], RestList, List).
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% Make a list with the possible values of the (Row, Col) cell in the solution board %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 make_possib_list(Board, Dim, Row, Col, List):- checkRightPossib(Board, Dim, Row, Col, ResultRight, 1),
                                                checkLeftPossib(Board, Dim, Row, Col, ResultLeft, 1),
@@ -117,6 +160,7 @@ make_possib_list(Board, Dim, Row, Col, List):- checkRightPossib(Board, Dim, Row,
                                                checkDownPossib(Board, Dim, Row, Col, ResultDown, 1),
                                                Result = [[0], ResultRight, ResultLeft, ResultUp, ResultDown],
                                                append(Result, List).
+
 
 checkRightPossib(Board, Dim, Row, Col, ResultRight, Counter):- NewCol is Col + Counter,
                                                                NewCol =< Dim, 
@@ -151,7 +195,6 @@ checkUpPossib(Board, Dim, Row, Col, ResultUp, Counter):-  NewRow is Row - Counte
 checkUpPossib(_, _, _, _, _, _).  
  
 
-
 checkDownPossib(Board, Dim, Row, Col, ResultDown, Counter):-  NewRow is Row + Counter,
                                                               NewRow =< Dim,
                                                               NewCounter is Counter + 1,
@@ -163,47 +206,62 @@ checkDownPossib(Board, Dim, Row, Col, ResultDown, Counter):-  NewRow is Row + Co
 checkDownPossib(_, _, _, _, _, _). 
 
 
-/* Restrict each cell so there can't be adjacent black pieces */
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% Restrict each solution board cell so there cant be any adjacent pieces %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % First Collumn
-adjacents([[H0Row0, H1Row0 | TRow0], [H0Row1 | TRow1] | TRows]):-
-	write('First Collumn'), nl, 
-	((H0Row0 #= 0 #/\ H1Row0 #= 0) #\/ (H0Row0 #= 0 #/\ H1Row0 #\= 0) #\/ (H1Row0 #= 0 #/\ H0Row0 #\= 0)) #/\
-	((H0Row0 #= 0 #/\ H0Row1 #= 0) #\/ (H0Row0 #= 0 #/\ H0Row1 #\= 0) #\/ (H0Row1 #= 0 #/\ H0Row0 #\= 0)),
-	adjacents([[H1Row0 | TRow0], TRow1 | TRows], [H0Row1 | TRow1]).
+adjacents([[H0Row0, H1Row0 | TRow0], [H0Row1 | TRow1] | TRows]):- ((H0Row0 #= 0 #/\ H1Row0 #= 0) #\/
+																(H0Row0 #= 0 #/\ H1Row0 #\= 0) #\/
+																(H1Row0 #= 0 #/\ H0Row0 #\= 0))
+																#/\
+																((H0Row0 #= 0 #/\ H0Row1 #= 0) #\/
+																(H0Row0 #= 0 #/\ H0Row1 #\= 0) #\/
+																(H0Row1 #= 0 #/\ H0Row0 #\= 0)),
+																adjacents([[H1Row0 | TRow0], TRow1 | TRows], [H0Row1 | TRow1]).
 
-adjacents([[H0Row, H1Row | []] | []]) :-
-	write('before last cell'), nl,
-	(H0Row #= 0 #/\ H1Row #= 0) #\/ (H0Row #= 0 #/\ H1Row #\= 0) #\/ (H1Row #= 0 #/\ H0Row #\= 0).
+
+% Last Cells
+adjacents([[H0Row, H1Row | []] | []]):- (H0Row #= 0 #/\ H1Row #= 0) #\/
+										(H0Row #= 0 #/\ H1Row #\= 0) #\/
+										(H1Row #= 0 #/\ H0Row #\= 0).
+
 
 % Last Row
-adjacents([[H0Row, H1Row | TRow] | []]) :-
-	write('last row'), nl,
-	(H0Row #= 0 #/\ H1Row #= 0) #\/ (H0Row #= 0 #/\ H1Row #\= 0) #\/ (H1Row #= 0 #/\ H0Row #\= 0),
-	adjacents([[H1Row | TRow] | []]).
+adjacents([[H0Row, H1Row | TRow] | []]):- (H0Row #= 0 #/\ H1Row #= 0) #\/
+										(H0Row #= 0 #/\ H1Row #\= 0) #\/
+										(H1Row #= 0 #/\ H0Row #\= 0),
+										adjacents([[H1Row | TRow] | []]).
 
 
-adjacents([[H0Row0, H1Row0 | TRow0], [H0Row1 | TRow1] | TRows], SavedList):-
-	((H0Row0 #= 0 #/\ H1Row0 #= 0) #\/ (H0Row0 #= 0 #/\ H1Row0 #\= 0) #\/ (H1Row0 #= 0 #/\ H0Row0 #\= 0)) #/\
-	((H0Row0 #= 0 #/\ H0Row1 #= 0) #\/ (H0Row0 #= 0 #/\ H0Row1 #\= 0) #\/ (H0Row1 #= 0 #/\ H0Row0 #\= 0)),
-	adjacents([[H1Row0 | TRow0], TRow1 | TRows], SavedList).
+adjacents([[H0Row0, H1Row0 | TRow0], [H0Row1 | TRow1] | TRows], SavedList):- ((H0Row0 #= 0 #/\ H1Row0 #= 0) #\/
+																			(H0Row0 #= 0 #/\ H1Row0 #\= 0) #\/
+																			(H1Row0 #= 0 #/\ H0Row0 #\= 0))
+																			#/\
+																			((H0Row0 #= 0 #/\ H0Row1 #= 0) #\/
+																			(H0Row0 #= 0 #/\ H0Row1 #\= 0) #\/
+																			(H0Row1 #= 0 #/\ H0Row0 #\= 0)),
+																			adjacents([[H1Row0 | TRow0], TRow1 | TRows], SavedList).
 
 
 % When going to Last Row
-adjacents([[H0Row0 | []], [H0Row1 | []] | []], SavedList) :-
-	write('once'), nl, 
-	(H0Row0 #= 0 #/\ H0Row1 #= 0) #\/ (H0Row0 #= 0 #/\ H0Row1 #\= 0) #\/ (H0Row1 #= 0 #/\ H0Row0 #\= 0),
-	write(SavedList), nl,
-	adjacents([SavedList]).
+adjacents([[H0Row0 | []], [H0Row1 | []] | []], SavedList):- (H0Row0 #= 0 #/\ H0Row1 #= 0) #\/
+															(H0Row0 #= 0 #/\ H0Row1 #\= 0) #\/
+															(H0Row1 #= 0 #/\ H0Row0 #\= 0),
+															adjacents([SavedList]).
+
 
 % Last Collumn
-adjacents([[H0Row0 | []], [H0Row1 | []] | TRows], SavedList) :-
-	write('Last Collumn'), nl, 
-	(H0Row0 #= 0 #/\ H0Row1 #= 0) #\/ (H0Row0 #= 0 #/\ H0Row1 #\= 0) #\/ (H0Row1 #= 0 #/\ H0Row0 #\= 0),
-	append([SavedList], TRows, Board),
-	adjacents(Board).
+adjacents([[H0Row0 | []], [H0Row1 | []] | TRows], SavedList):-  (H0Row0 #= 0 #/\ H0Row1 #= 0) #\/
+																(H0Row0 #= 0 #/\ H0Row1 #\= 0) #\/
+																(H0Row1 #= 0 #/\ H0Row0 #\= 0),
+																append([SavedList], TRows, Board),
+																adjacents(Board).
 
-/* Restrict each cell with the respective possibilities */
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% Restrict each cell with the respective previously calculated possibilities %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Last Cell
 restrict([[HRLast | []] | []], [HCLast | []]):- restrict_cell(HRLast, HCLast).
@@ -220,77 +278,7 @@ restrict([[H0Row0 | []] | TRows], [HCell | TCells]):- restrict_cell(H0Row0, HCel
 
 % Last Row
 restrict([[H0Row | TRow] | []], [HCell | TCells]):- restrict_cell(H0Row, HCell),
-										restrict(TRow, TCells).
-
-
+													restrict(TRow, TCells).
 
 restrict_cell(HRow, HCell):- list_to_fdset(HCell, Set),
 							HRow in_set Set.
-
-
-/* Check Range Black pieces */
-
-checkRange(Board, Row, Col, Dimension):- checkRight(Board, Row, Col, Dimension),
-                                         checkLeft(Board, Row, Col, Dimension),
-                                         checkUp(Board, Row, Col, Dimension),
-                                         checkDown(Board, Row, Col, Dimension).
-
-
-checkRight(Board, Row, Col, Dimension):- ((Col < Dimension, NewCol is Col + 1,
-                                          getCell(Board, Row, NewCol, Cell, Dimension), 
-                                          Cell > 0)) -> false; true.
-
-checkLeft(Board, Row, Col, Dimension):- ((Col > 1, NewCol is Col - 1,
-                                         getCell(Board, Row, NewCol, Cell, Dimension), 
-                                         Cell > 0)) -> false; true.
-
-checkUp(Board, Row, Col, Dimension):- ((Row > 1, NewRow is Row - 1,
-                                       getCell(Board, NewRow, Col, Cell, Dimension), 
-                                       Cell > 0)) -> false; true.
-
-checkDown(Board, Row, Col, Dimension):- ((Row < Dimension, NewRow is Row + 1,
-                                       getCell(Board, NewRow, Col, Cell, Dimension), 
-                                       Cell > 0)) -> false; true.
-
-/* Check the distance to the edges */
-
-calcEdgeDistances(Dimension, Row, Col, Result):- DistanceRight is Dimension - Col, 
-                                                 DistanceLeft is Col - 1,
-                                                 DistanceUp is Row - 1,
-                                                 DistanceDown is Dimension - Row,
-                                                 X = [[DistanceRight],[DistanceLeft],[DistanceUp],[DistanceDown]],
-                                                 append(X,Result).
-
-
-
-/* Get Black Pieces */
-get_black_pieces([Hrow | Trows], List) :-
-        length(Hrow, Dimension),
-        get_black_pieces([Hrow | Trows], Dimension, 1, List).
-
-get_black_pieces([], _, _, []).
-
-get_black_pieces([Hrow | Trows], Dimension, Row, List) :-
-        get_black_pieces_row(Hrow, Dimension, Row, RowList),
-        NewRow is Row + 1,
-        get_black_pieces(Trows, Dimension, NewRow, BoardList),
-        append(RowList, BoardList, List).
-
-get_black_pieces_row(RowList, Dimension, Row, List):-
-        get_black_pieces_row(RowList, Dimension, Row, 1, List).
-
-get_black_pieces_row(RowList, Dimension, Row, Dimension, List):-
-        nth1(Dimension, RowList, Number),
-        (Number > 0 -> append([], [[Row, Dimension, Number]], TempList)
-        ;
-        append([],[],TempList)),
-        append([], TempList, List).
-
-get_black_pieces_row(RowList, Dimension, Row, Col, List):-
-        nth1(Col, RowList, Number),
-        (Number > 0 -> append([], [[Row, Col, Number]], TempList)
-        ;
-        append([],[],TempList)),
-        NewCol is Col + 1,
-        get_black_pieces_row(RowList, Dimension, Row, NewCol, RestList),
-        append(TempList, RestList, List).
